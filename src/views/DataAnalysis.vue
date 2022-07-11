@@ -107,9 +107,10 @@
             @size-change="handlePageSizeChange"
             @current-change="handleCurrentPageChange"
             v-model:currentPage="currentPage"
-            :page-sizes="pageSize"
+            :page-sizes="pageSizes"
+            :page-size="pageSize"
             layout="total, sizes, prev, pager, next"
-            :total="1000"
+            :total="totalSize"
           >
           </el-pagination>
           </template>
@@ -135,7 +136,7 @@ import {
   School,
   Warning
 } from '@element-plus/icons'
-import { formatDate } from '@/assets/js/util'
+import { formatDate } from '@/plugins/util'
 
 export default {
   components: {
@@ -167,7 +168,9 @@ export default {
       currentRow: null,
       src: require('../assets/images/avatar.png'),
       currentPage: 1,
-      pageSize: [10, 20, 30, 40, 50, 100]
+      totalSize: 0,
+      pageSize: 50,
+      pageSizes: [50, 100, 150, 200, 500]
     }
   },
   filters: {},
@@ -177,7 +180,7 @@ export default {
     localStorage.setItem('activeIndex', JSON.stringify(currentIndex))
 
     this.getUnHistoryDataCount()
-    this.getHistoryData()
+    this.getHistoryData(this.currentPage, this.pageSize)
   },
   methods: {
     formatTime (time) {
@@ -190,8 +193,17 @@ export default {
       const date = new Date(time)
       return formatDate(date, 'yyyy-MM-dd')
     },
-    async getHistoryData () {
+    async getHistoryData (currentPage, pageSize) {
+      var params = new URLSearchParams()
+      params.append('pageNum', currentPage)
+      params.append('pageSize', pageSize)
+      console.log(this.currentPage, this.pageSize)
+      // const { data: res } = await this.$api.post(
+      //  'getDataHistoryPagination',
+      //  params
+      // )
       const { data: res } = await this.$api.post('getDataHistory', this.empty)
+      // this.totalSize = res.totalSize
       console.log(res.list)
       this.CountOfHistory = res.total
       for (var i = 0; i < res.list.length; i++) {
@@ -202,9 +214,9 @@ export default {
           confidence: res.list[i].detConfidence,
           name: res.list[i].detStudentName,
           class: res.list[i].detStudentClass,
-          picLink: res.list[i].detImageLink
+          picLink: 'http://nmsl.adamaxiao.workers.dev/DataNew/' + res.list[i].detImageLink + '.jpg?raw'
         }
-        this.src = res.list[0].detImageLink
+        this.src = 'http://nmsl.adamaxiao.workers.dev/DataNew/' + res.list[0].detImageLink + '.jpg?raw'
         this.tableData.push(insertItem)
         console.log(insertItem)
       }
@@ -239,14 +251,20 @@ export default {
       console.log(index, rows)
     },
     handleCurrentTableChange (val) {
-      console.log(val.index)
+      console.log(val)
       this.src = val.picLink
     },
+
+    // pagination
     handlePageSizeChange (val) {
-      console.log(`each ${val}`)
+      this.pageSize = val
+      this.tableData = []
+      this.getHistoryData(this.currentPage, this.pageSize)
     },
     handleCurrentPageChange (val) {
-      console.log(`current page: ${val}`)
+      this.currentPage = val
+      this.tableData = []
+      this.getHistoryData(this.currentPage, this.pageSize)
     }
   }
 }

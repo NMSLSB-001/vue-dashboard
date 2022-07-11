@@ -30,11 +30,26 @@ const routes = [
     component: Home,
     redirect: '/dashboard',
     children: [
-      { path: '/dashboard', component: Dashboard },
-      { path: '/dataanalysis', component: DataAnalysis },
-      { path: '/studentlist', component: StudentList },
-      { path: '/systemanalysis', component: SystemAnalysis },
-      { path: '/settings', component: Settings }
+      {
+        path: '/dashboard',
+        component: Dashboard
+      },
+      {
+        path: '/dataanalysis',
+        component: DataAnalysis
+      },
+      {
+        path: '/studentlist',
+        component: StudentList
+      },
+      {
+        path: '/systemanalysis',
+        component: SystemAnalysis
+      },
+      {
+        path: '/settings',
+        component: Settings
+      }
     ]
   },
   {

@@ -120,6 +120,7 @@ export default {
       ],
       addSubmitForm: {
         studentId: '',
+        userId: '',
         studentName: '',
         isMale: '',
         studyYear: '',
@@ -209,6 +210,7 @@ export default {
       this.$refs[formName].validate(async (valid) => {
         if (valid) {
           this.addSubmitForm.studentId = this.addForm.id
+          this.addSubmitForm.userId = 5
           this.addSubmitForm.studentName = this.addForm.name
           this.addSubmitForm.isMale = this.addForm.gender
           this.addSubmitForm.studyYear = this.addForm.year
