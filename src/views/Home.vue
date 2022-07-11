@@ -18,7 +18,7 @@
           <el-menu-item index="/dashboard">Dashboard</el-menu-item>
           <el-menu-item index="/dataanalysis">Data Analysis</el-menu-item>
           <el-menu-item index="/studentlist">Student Management</el-menu-item>
-          <el-menu-item index="/systemanalysis">System Analysis</el-menu-item>
+          <!-- <el-menu-item index="/systemanalysis">System Analysis</el-menu-item> -->
           <el-menu-item index="/settings">Settings</el-menu-item>
         </el-menu>
       </div>
@@ -81,14 +81,37 @@ export default {
       this.activeIndex = '/dashboard'
     }
     // 在页面刷新时将vuex里的信息保存到localStorage里
-
     const getActiveLogin = JSON.parse(localStorage.getItem('activeLogin'))
     console.log(getActiveLogin)
-    if (getActiveLogin === null) {
+    if (getActiveLogin != null) {
+      this.checkValidation(getActiveLogin.token)
+    } else {
       this.$router.push('/login')
     }
   },
   methods: {
+    async checkValidation (token) {
+      const params = new URLSearchParams()
+      params.append('authToken', token)
+      const { data: res } = await this.$api.post('user/isStillValid', params)
+      console.log(res)
+      if (res.obj !== '1') {
+        this.$router.push('/login')
+      }
+    },
+    async userLoginOut (token) {
+      const params = new URLSearchParams()
+      params.append('authToken', token)
+      const { data: res } = await this.$api.post('user/userLogout', params)
+      console.log(res)
+      if (res.code === 200) {
+        const currentLogin = null
+        localStorage.setItem('activeLogin', JSON.stringify(currentLogin))
+        this.$router.push('/login')
+      } else {
+        this.$router.push('/intropage')
+      }
+    },
     handleSelect (key, keyPath) {
       this.key = key
       console.log(key, keyPath)
@@ -100,9 +123,11 @@ export default {
       this.$router.push('/settings')
     },
     dropdown_event_2 () {
-      const currentLogin = null
-      localStorage.setItem('activeLogin', JSON.stringify(currentLogin))
-      this.$router.push('/intropage')
+      const getActiveLogin = JSON.parse(localStorage.getItem('activeLogin'))
+      console.log(getActiveLogin)
+      if (getActiveLogin != null) {
+        this.userLoginOut(getActiveLogin.token)
+      }
     }
   }
 }

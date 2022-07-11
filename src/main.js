@@ -15,3 +15,7 @@ app.use(router).use(ElementPlus).mount('#app') //
 // app.use(Icon)
 app.config.globalProperties.$echarts = echarts
 app.config.globalProperties.$api = axios
+
+export function getAxios () {
+  return axios.defaults.baseURL
+}

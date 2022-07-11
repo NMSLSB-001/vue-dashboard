@@ -27,7 +27,7 @@
         <img src="../assets/images/avatar.png" alt="" />
       </div>
       <!-- form -->
-      <el-form :model="loginForm" class="login_form">
+      <el-form :rules="rules" :model="loginForm" class="login_form">
         <!-- username -->
         <el-form-item>
           <span>Username</span>
@@ -48,7 +48,13 @@
         <!-- button -->
         <div class="buttons">
           <el-form-item>
-            <el-button type="primary" @click="toLogin()">Login</el-button>
+            <el-button
+              :loading="btnLoading"
+              :disabled="btnDisabled"
+              type="primary"
+              @click="toLogin()"
+              >Login</el-button
+            >
           </el-form-item>
         </div>
       </el-form>
@@ -57,11 +63,12 @@
 </template>
 
 <script>
-import { InfoFilled } from '@element-plus/icons'
+import { InfoFilled, Loading } from '@element-plus/icons'
 
 export default {
   components: {
-    [InfoFilled.name]: InfoFilled
+    [InfoFilled.name]: InfoFilled,
+    [Loading.name]: Loading
   },
   data () {
     var validateusername = (rule, value, callback) => {
@@ -82,21 +89,50 @@ export default {
       rules: {
         username: [{ validator: validateusername, trigger: 'blur' }],
         password: [{ validator: validatepassword, trigger: 'blur' }]
-      }
+      },
+      btnDisabled: false,
+      btnLoading: false
+    }
+  },
+  created () {
+    const getActiveLogin = JSON.parse(localStorage.getItem('activeLogin'))
+    console.log(getActiveLogin)
+    if (getActiveLogin != null) {
+      this.checkValidation(getActiveLogin.token)
     }
   },
   methods: {
     intropageButton () {
       this.$router.push('/intropage')
     },
-    toLogin () {
-      if (
-        this.loginForm.username === 'admin' &&
-        this.loginForm.password === 'admin'
-      ) {
-        const currentLogin = '1145147897'
+    async checkValidation (token) {
+      const params = new URLSearchParams()
+      params.append('authToken', token)
+      const { data: res } = await this.$api.post('user/isStillValid', params)
+      console.log(res)
+      if (res.obj === '1') {
+        this.$router.push('/home')
+      }
+    },
+    async toLogin () {
+      this.btnDisabled = true
+      this.btnLoading = true
+      const { data: res } = await this.$api.post(
+        'user/userLogin',
+        this.loginForm
+      )
+      console.log(res)
+      if (res.code === 200) {
+        const currentLogin = {
+          username: this.loginForm.username,
+          token: res.obj
+        }
         localStorage.setItem('activeLogin', JSON.stringify(currentLogin))
         this.$router.push('/home')
+      } else {
+        this.btnDisabled = false
+        this.btnLoading = false
+        alert(res.message)
       }
     },
     toRegister () {

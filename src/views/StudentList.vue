@@ -3,38 +3,38 @@
     <div class="upper_area">
       <div class="search_table">
         <template>
-          <el-form
-            :inline="true"
-            :rules="rule"
-            :model="formInline"
-            class="demo-form-inline"
-          >
-            <el-form-item label="" prop="name">
-              <el-input
-                v-model="formInline.search"
-                placeholder="Student Search"
-              ></el-input>
-            </el-form-item>
-            <el-form-item class="search_select" label="">
-              <el-select v-model="formInline.type" placeholder="Type">
-                <el-option label="Student ID" value="id"></el-option>
-                <el-option label="Student's Name" value="stu_name"></el-option>
-                <el-option label="Student's Class" value="class"></el-option>
-                <el-option label="" value="" disabled></el-option>
-                <el-option
-                  label="CarPlate Number"
-                  value="carplate_num"
-                ></el-option>
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                @click="onSearchSubmit(formInline.search, formInline.type)"
-                >Search</el-button
-              >
-            </el-form-item>
-          </el-form>
+        <el-form
+          :inline="true"
+          :rules="rule"
+          :model="formInline"
+          class="demo-form-inline"
+        >
+          <el-form-item label="" prop="name">
+            <el-input
+              v-model="formInline.search"
+              placeholder="Student Search"
+            ></el-input>
+          </el-form-item>
+          <el-form-item class="search_select" label="">
+            <el-select v-model="formInline.type" placeholder="Type">
+              <el-option label="Student ID" value="id"></el-option>
+              <el-option label="Student's Name" value="stu_name"></el-option>
+              <el-option label="Student's Class" value="class"></el-option>
+              <el-option label="" value="" disabled></el-option>
+              <el-option
+                label="CarPlate Number"
+                value="carplate_num"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="primary"
+              @click="onSearchSubmit(formInline.search, formInline.type)"
+              >Search</el-button
+            >
+          </el-form-item>
+        </el-form>
         </template>
       </div>
       <div class="add_info">
@@ -93,10 +93,8 @@
                 </el-form-item>
                 <el-form-item label="Student Gender" prop="gender">
                   <el-radio-group v-model="editForm.gender">
-                  <el-radio :label="0"
-                    >Female</el-radio
-                  >
-                  <el-radio :label="1">Male</el-radio>
+                    <el-radio :label="0">Female</el-radio>
+                    <el-radio :label="1">Male</el-radio>
                   </el-radio-group>
                 </el-form-item>
                 <el-form-item label="Student Class" prop="">
@@ -172,6 +170,19 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination_container">
+        <span class="demonstration"></span>
+        <el-pagination
+          @size-change="handlePageSizeChange"
+          @current-change="handleCurrentPageChange"
+          v-model:currentPage="currentPage"
+          :page-sizes="pageSizes"
+          :page-size="pageSize"
+          layout="total, sizes, prev, pager, next"
+          :total="totalSize"
+        >
+        </el-pagination>
+      </div>
     </div>
   </div>
 </template>
@@ -307,7 +318,11 @@ export default {
       rowNum: 0,
       formLabelWidth: '120px',
       dialogFormVisible: false, // for edit button
-      dialogVisible: false // for delete button
+      dialogVisible: false, // for delete button
+      currentPage: 1,
+      totalSize: 0,
+      pageSizes: [15, 20, 30],
+      pageSize: 15
     }
   },
   created () {
@@ -315,11 +330,19 @@ export default {
     this.$emit('getIndex', currentIndex)
     localStorage.setItem('activeIndex', JSON.stringify(currentIndex))
 
-    this.getAllData()
+    this.getAllData(this.currentPage, this.pageSize)
   },
   methods: {
-    async getAllData () {
-      const { data: res } = await this.$api.post('getCarPlate', this.empty)
+    async getAllData (currentPage, pageSize) {
+      var params = new URLSearchParams()
+      params.append('pageNum', currentPage)
+      params.append('pageSize', pageSize)
+      console.log(this.currentPage, this.pageSize)
+      const { data: res } = await this.$api.post(
+        'getCarPlatePagination',
+        params
+      )
+      this.totalSize = res.totalSize
       console.log(res.list)
       var gender = ''
       for (var i = 0; i < res.list.length; i++) {
@@ -345,12 +368,14 @@ export default {
       }
       this.loading = false
     },
+
     // timer
     timer () {
       return setTimeout(() => {
-        this.getAllData()
+        this.getAllData(this.currentPage, this.pageSize)
       }, 1000)
     },
+
     // watch data change
     watch: {
       one () {
@@ -360,6 +385,7 @@ export default {
     destroyed () {
       clearTimeout(this.timer)
     },
+
     // other functions
     onSearchSubmit (search, type) {
       console.log(search, type)
@@ -367,6 +393,7 @@ export default {
     toAdd () {
       this.$router.push('/addstudent')
     },
+
     // edit
     handleEdit (index, row) {
       this.editForm.index = row.index
@@ -391,9 +418,10 @@ export default {
       console.log(editItem)
       const result = await this.$api.post('editCarPlate', editItem)
       console.log(result)
-      this.getAllData()
+      this.getAllData(this.currentPage, this.pageSize)
       this.$router.go(0)
     },
+
     // delete
     handleDelete (index, row) {
       this.indexNum = index
@@ -407,8 +435,20 @@ export default {
       const result = await this.$api.post('deleteCarPlate', deleteItme)
       console.log(result)
       alert('Delete Successfully!')
-      this.getAllData()
+      this.getAllData(this.currentPage, this.pageSize)
       this.$router.go(0)
+    },
+
+    // pagination
+    handlePageSizeChange (val) {
+      this.pageSize = val
+      this.tableData = []
+      this.getAllData(this.currentPage, this.pageSize)
+    },
+    handleCurrentPageChange (val) {
+      this.currentPage = val
+      this.tableData = []
+      this.getAllData(this.currentPage, this.pageSize)
     }
   }
 }
@@ -430,6 +470,13 @@ export default {
 }
 
 .edit_column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination_container {
+  padding-top: 1%;
   display: flex;
   align-items: center;
   justify-content: center;
